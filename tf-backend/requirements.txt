@@ -1,0 +1,11 @@
+fastapi
+uvicorn
+sqlalchemy
+pydantic
+python-multipart
+torch
+fair-esm
+biopython
+scikit-learn
+joblib
+numpy

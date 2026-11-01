@@ -1,0 +1,49 @@
+# Large datasets & raw FASTA training files (>100MB blocked by GitHub)
+Transcription_factor/
+Transcription_factor_updated/
+*.fasta
+*.fas
+*.faa
+*.fna
+*.zip
+
+# Misc root-level scripts and reports not part of the app
+train_pipeline.py
+create_excel_log.py
+create_word_report.py
+zip_frontend.py
+TransFactor_AI_Technical_Report.docx
+diseaseai_pred_efficientNET.ipynb
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.db
+*.sqlite3
+transfactor.db
+uploads/
+temp_uploads/
+
+# Node / Frontend
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+dist/
+dist-ssr/
+*.local
+
+# Editor & OS
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
