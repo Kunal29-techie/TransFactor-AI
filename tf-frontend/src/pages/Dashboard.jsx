@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Activity, Database, Dna, Server, ArrowRight, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { API_BASE_URL } from '../config';
 
 function Dashboard() {
   const [stats, setStats] = useState({ totalJobs: 0, totalSeqs: 0, totalTFs: 0, modelOnline: false });
@@ -11,8 +12,8 @@ function Dashboard() {
     const fetchData = async () => {
       try {
         const [healthRes, historyRes] = await Promise.all([
-          fetch('http://127.0.0.1:8000/').then(r => r.json()).catch(() => ({ status: 'offline', models_loaded: false })),
-          fetch('http://127.0.0.1:8000/batch/history').then(r => r.json()).catch(() => [])
+          fetch(`${API_BASE_URL}/`).then(r => r.json()).catch(() => ({ status: 'offline', models_loaded: false })),
+          fetch(`${API_BASE_URL}/batch/history`).then(r => r.json()).catch(() => [])
         ]);
 
         const totalTFs = historyRes.reduce((sum, job) => sum + (job.results ? job.results.filter(r => r.is_tf).length : 0), 0);

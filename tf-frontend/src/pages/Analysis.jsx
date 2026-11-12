@@ -4,6 +4,7 @@ import {
   Sparkles, Clock, ArrowRight, Tag, Filter, Copy, Check, X,
   AlertCircle, ChevronDown, ChevronUp, RefreshCw, ExternalLink, Database, BookOpen
 } from 'lucide-react';
+import { API_BASE_URL } from '../config';
 
 const POPULAR_FAMILIES = [
   'WRKY', 'MYB', 'bHLH', 'NAC', 'AP2/ERF', 'bZIP', 'MADS', 'C2H2', 'GATA', 'HD-ZIP'
@@ -250,7 +251,7 @@ export default function Analysis() {
       formData.append('file', file);
 
       try {
-        const res = await fetch('http://localhost:8000/batch/upload', {
+        const res = await fetch(`${API_BASE_URL}/batch/upload`, {
           method: 'POST',
           body: formData,
         });
@@ -266,13 +267,13 @@ export default function Analysis() {
       } catch (err) {
         console.error(err);
         setLoading(false);
-        alert('Could not connect to backend at http://localhost:8000. Please ensure backend is running.');
+        alert(`Could not connect to backend at ${API_BASE_URL}. Please ensure backend is running.`);
       }
     } else {
       // Direct text / pasted sequence prediction
       setProgress({ current: 1, total: 1, percent: 50, status: 'Predicting with ESM2 & checking reading frames...' });
       try {
-        const res = await fetch('http://localhost:8000/batch/predict-text', {
+        const res = await fetch(`${API_BASE_URL}/batch/predict-text`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ fasta_text: sequenceText }),
@@ -296,7 +297,7 @@ export default function Analysis() {
 
     pollRef.current = setInterval(async () => {
       try {
-        const res = await fetch(`http://localhost:8000/batch/status/${jobId}`);
+        const res = await fetch(`${API_BASE_URL}/batch/status/${jobId}`);
         const data = await res.json();
 
         const current = data.processed_sequences || 0;
@@ -334,7 +335,7 @@ export default function Analysis() {
 
   const fetchResults = async (id) => {
     try {
-      const res = await fetch(`http://localhost:8000/batch/results/${id}`);
+      const res = await fetch(`${API_BASE_URL}/batch/results/${id}`);
       const data = await res.json();
       setResults(data);
       setLoading(false);

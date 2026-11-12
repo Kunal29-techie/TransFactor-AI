@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, FileText, ChevronDown, ChevronUp, Download, Eye, AlertCircle } from 'lucide-react';
+import { API_BASE_URL } from '../config';
 
 function ProjectHistory() {
   const [jobs, setJobs] = useState([]);
@@ -7,7 +8,7 @@ function ProjectHistory() {
   const [expandedJob, setExpandedJob] = useState(null);
 
   useEffect(() => {
-    fetch('http://127.0.0.1:8000/batch/history')
+    fetch(`${API_BASE_URL}/batch/history`)
       .then(r => r.json())
       .then(data => { setJobs(data); setLoading(false); })
       .catch(() => setLoading(false));
