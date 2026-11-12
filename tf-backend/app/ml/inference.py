@@ -1,5 +1,7 @@
 import os
 import re
+import ssl
+import urllib.request
 import torch
 import torch.nn as nn
 import numpy as np
@@ -7,6 +9,12 @@ import joblib
 import esm
 from Bio import SeqIO
 from Bio.Seq import Seq
+
+# Bypass SSL certificate verification for downloading ESM-2 weights from Meta CDN
+try:
+    ssl._create_default_https_context = ssl._create_unverified_context
+except Exception:
+    pass
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 print(f'[Model Engine] Running on device: {device}')
