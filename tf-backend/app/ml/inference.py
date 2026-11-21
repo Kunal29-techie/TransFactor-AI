@@ -297,8 +297,9 @@ def get_family_database_info(family_name: str):
 
 def translate_nucleotide_to_protein(seq: str):
     """
-    Detects if the input sequence is nucleotide (DNA/RNA, genome FASTA).
-    If so, identifies the longest Open Reading Frame (ORF) across all 6 reading frames.
+    Detects if the input sequence is plant mRNA / transcript / cDNA sequence (ACGTU).
+    If so, identifies the biologically optimal Open Reading Frame (ORF) prioritizing
+    the canonical start codon (AUG/ATG) to stop codon across candidate frames.
     Returns (protein_seq, was_translated).
     """
     clean_alpha = ''.join(c for c in seq.upper() if c.isalpha())
@@ -312,25 +313,33 @@ def translate_nucleotide_to_protein(seq: str):
         return clean_alpha, False
 
     try:
+        # Standardize RNA (U) to cDNA (T) for codon translation
         dna_str = clean_alpha.replace('U', 'T')
         seq_obj = Seq(dna_str)
         rev_obj = seq_obj.reverse_complement()
 
         candidates = []
+        # Check forward frames (+1, +2, +3) and reverse-complement frames (-1, -2, -3)
         for s in [seq_obj, rev_obj]:
             for offset in range(3):
                 sub = s[offset:]
                 trim_len = len(sub) - (len(sub) % 3)
                 if trim_len >= 30:
                     translated_str = str(sub[:trim_len].translate())
-                    # Split on stop codons to extract viable continuous protein ORFs
+                    # 1. Search for canonical start-to-stop ORFs (starting with M = AUG/ATG)
                     for pep in translated_str.split('*'):
                         clean_pep = ''.join(c for c in pep if c.isalpha() and c != 'X')
+                        if 'M' in clean_pep:
+                            m_idx = clean_pep.find('M')
+                            m_pep = clean_pep[m_idx:]
+                            if len(m_pep) >= 30:
+                                candidates.append((len(m_pep) + 50, m_pep)) # Boost canonical start-codon ORFs
                         if len(clean_pep) >= 30:
-                            candidates.append(clean_pep)
+                            candidates.append((len(clean_pep), clean_pep))
 
         if candidates:
-            best_pep = max(candidates, key=len)
+            # Pick highest scored candidate (length + canonical start boost)
+            best_pep = max(candidates, key=lambda x: x[0])[1]
             return best_pep, True
 
         # Fallback to direct translation of frame 0
@@ -338,7 +347,7 @@ def translate_nucleotide_to_protein(seq: str):
         fallback = str(Seq(dna_str[:trim_len]).translate(to_stop=True)).replace('*', '')
         return fallback, True
     except Exception as e:
-        print(f'[Model Engine] Translation warning: {e}')
+        print(f'[Model Engine] mRNA/Transcript translation warning: {e}')
         return clean_alpha, False
 
 class TFInferenceEngine:

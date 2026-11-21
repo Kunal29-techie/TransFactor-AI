@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import {
   UploadCloud, FileText, Play, CheckCircle2, XCircle, Search, Dna,
   Sparkles, Clock, ArrowRight, Tag, Filter, Copy, Check, X,
-  AlertCircle, ChevronDown, ChevronUp, RefreshCw, ExternalLink, Database, BookOpen
+  AlertCircle, ChevronDown, ChevronUp, RefreshCw, ExternalLink, Database, BookOpen, Download
 } from 'lucide-react';
 import { API_BASE_URL } from '../config';
 
@@ -357,10 +357,10 @@ GVKKKVERSHVGQITEIIYKGEHNHPKPKRARRAK`
     scrollToQuerySection();
   };
 
-  const loadSampleGenome = () => {
+  const loadSampleMRNA = () => {
     setInputMode('text');
     setSequenceText(
-      `>Sesame_Genomic_Contig_DNA_Sample
+      `>Arabidopsis_WRKY33_mRNA_Transcript_cDNA
 ATGGCTTCGACGTCCGAAGTAGAGATTCTTAGCTTGAAAAGTTCGCCATCTCTTAGTCTCC
 TCGACGATGGCTTGGACCTCTCTCTTAACAACGATCAGGAAACTATTTCTCCTCAAAAACC
 GCCACCGTCTATCTCTTCTTCTCTCCTCGTTGATAATGATAATGATAATGATAACAAGAAG
@@ -382,6 +382,71 @@ GCGAGCATAACCATCCAAAGCCAAAGAGAGCTAGACGAGCTAAGTAA`
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const downloadResultsCSV = () => {
+    if (!results || results.length === 0) return;
+    const headers = [
+      'Sequence ID',
+      'Verdict (TF?)',
+      'Is TF',
+      'TF Confidence (%)',
+      'Predicted Family',
+      'Family Confidence (%)',
+      'Source Type',
+      'Length (aa)',
+      'Pfam ID',
+      'InterPro ID'
+    ].join(',');
+
+    const rows = results.map(r => {
+      const tfPct = (r.tf_confidence * (r.tf_confidence <= 1 ? 100 : 1)).toFixed(1);
+      const famPct = (r.family_confidence * (r.family_confidence <= 1 ? 100 : 1)).toFixed(1);
+      const pfamId = r.db_references?.pfam_id || PFAM_DATABASE[r.family]?.pfam || 'N/A';
+      const interproId = r.db_references?.interpro_id || PFAM_DATABASE[r.family]?.interpro || 'N/A';
+      const sourceType = r.was_translated ? 'Plant mRNA / Transcript (cDNA)' : 'Native Protein';
+
+      return [
+        `"${r.sequence_id || 'Seq'}"`,
+        `"${r.verdict || (r.is_tf ? 'YES' : 'NO')}"`,
+        `"${r.is_tf ? 'YES' : 'NO'}"`,
+        `"${tfPct}%"`,
+        `"${r.family || 'Non-TF'}"`,
+        `"${r.is_tf ? famPct + '%' : 'N/A'}"`,
+        `"${sourceType}"`,
+        r.sequence_length || r.sequence?.length || 0,
+        `"${pfamId}"`,
+        `"${interproId}"`
+      ].join(',');
+    }).join('\n');
+
+    const blob = new Blob([headers + '\n' + rows], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `TransFactor_AI_Predictions_${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
+  const downloadResultsFASTA = () => {
+    if (!results || results.length === 0) return;
+    const fastaContent = results.map(r => {
+      const id = r.sequence_id || 'Sequence';
+      const fam = r.is_tf ? r.family : 'Non-TF';
+      const seq = r.protein_sequence || r.sequence || '';
+      return `>${id} | TF=${r.is_tf ? 'YES' : 'NO'} | Family=${fam} | Length=${seq.length}aa\n${seq}`;
+    }).join('\n\n');
+
+    const blob = new Blob([fastaContent], { type: 'text/plain;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', `TransFactor_AI_Proteins_${new Date().toISOString().slice(0, 10)}.fasta`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   const tfCount = results.filter((r) => r.is_tf).length;
   const nonTfCount = results.length - tfCount;
   const translatedCount = results.filter((r) => r.was_translated).length;
@@ -400,13 +465,13 @@ GCGAGCATAACCATCCAAAGCCAAAGAGAGCTAGACGAGCTAAGTAA`
           Sequence Analysis &amp; Family Query
         </h1>
         <p style={{ color: '#64748b', fontSize: '1rem', lineHeight: '1.5' }}>
-          High-throughput Plant Transcription Factor Identification with automatic Genome DNA-to-Protein translation and interactive multi-family queries.
+          High-throughput Plant Transcription Factor Identification with automatic Plant mRNA/Transcript (cDNA) translation and interactive multi-family queries.
         </p>
 
         {/* Feature Highlights Pills */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '16px' }}>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: '#e0f2fe', color: '#0369a1', padding: '6px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600 }}>
-            <Dna size={14} /> Genome FASTA Auto-Translation (6-Frame ORF)
+            <Dna size={14} /> Plant mRNA / Transcript Auto-Translation (Spliced CDS)
           </div>
           <div style={{ display: 'inline-flex', alignItems: 'center', gap: '6px', backgroundColor: '#dcfce7', color: '#166534', padding: '6px 12px', borderRadius: '20px', fontSize: '0.8rem', fontWeight: 600 }}>
             <CheckCircle2 size={14} /> One Final Definitive Answer per Sequence
@@ -440,7 +505,7 @@ GCGAGCATAACCATCCAAAGCCAAAGAGAGCTAGACGAGCTAAGTAA`
                 transition: 'all 0.2s'
               }}
             >
-              <UploadCloud size={16} /> Upload FASTA / Genome File
+              <UploadCloud size={16} /> Upload FASTA / mRNA File
             </button>
             <button
               onClick={() => setInputMode('text')}
@@ -484,7 +549,7 @@ GCGAGCATAACCATCCAAAGCCAAAGAGAGCTAGACGAGCTAAGTAA`
             </button>
             <button
               type="button"
-              onClick={loadSampleGenome}
+              onClick={loadSampleMRNA}
               disabled={loading}
               style={{
                 fontSize: '0.78rem',
@@ -497,7 +562,7 @@ GCGAGCATAACCATCCAAAGCCAAAGAGAGCTAGACGAGCTAAGTAA`
                 cursor: 'pointer'
               }}
             >
-              Load Genome DNA Example
+              Load Plant mRNA (WRKY33)
             </button>
           </div>
         </div>
@@ -529,10 +594,10 @@ GCGAGCATAACCATCCAAAGCCAAAGAGAGCTAGACGAGCTAAGTAA`
                 <UploadCloud size={28} />
               </div>
               <h3 style={{ margin: '0 0 6px', fontSize: '1.15rem', color: '#0f172a', fontWeight: 600 }}>
-                {file ? file.name : 'Select or Drop FASTA / Genome File'}
+                {file ? file.name : 'Select or Drop FASTA (Protein or mRNA Transcript)'}
               </h3>
               <p style={{ margin: '0 0 16px', fontSize: '0.85rem', color: '#64748b' }}>
-                Supports protein (.fasta, .faa) or genomic nucleotide (.fasta, .fa, .fna) with automatic ORF translation.
+                Supports protein (.fasta, .faa) or mature plant mRNA / transcript cDNA (.fasta, .fa, .fna) with automatic start-to-stop ORF translation.
               </p>
               {file ? (
                 <div style={{ display: 'inline-flex', alignItems: 'center', gap: '8px', padding: '6px 16px', backgroundColor: '#e0f2fe', color: '#0369a1', borderRadius: '20px', fontSize: '0.85rem', fontWeight: 600 }}>
@@ -591,7 +656,7 @@ GCGAGCATAACCATCCAAAGCCAAAGAGAGCTAGACGAGCTAAGTAA`
               }}
             />
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: '6px', fontSize: '0.78rem', color: '#64748b' }}>
-              <span>Accepts raw sequences or FASTA blocks. Genome DNA is automatically detected &amp; translated.</span>
+              <span>Accepts raw amino acids, mature plant mRNA, or cDNA transcripts (A, C, G, T/U). Spliced coding sequences are automatically detected &amp; translated.</span>
               <span>{sequenceText.length} characters</span>
             </div>
           </div>
@@ -962,14 +1027,14 @@ GCGAGCATAACCATCCAAAGCCAAAGAGAGCTAGACGAGCTAAGTAA`
                 </span>
                 {translatedCount > 0 && (
                   <span style={{ color: '#0369a1', fontWeight: 600 }}>
-                    🧬 {translatedCount} Genome DNA sequences auto-translated
+                    🧬 {translatedCount} Plant mRNA / Transcript sequences auto-translated
                   </span>
                 )}
               </div>
             </div>
 
-            {/* Filter Buttons */}
-            <div style={{ display: 'flex', gap: '8px' }}>
+            {/* Filter & Action Buttons */}
+            <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', alignItems: 'center' }}>
               <button
                 onClick={() => setFilter('ALL')}
                 style={{
@@ -1015,6 +1080,51 @@ GCGAGCATAACCATCCAAAGCCAAAGAGAGCTAGACGAGCTAAGTAA`
               >
                 Non-TFs ({nonTfCount})
               </button>
+
+              <div style={{ height: '22px', width: '1px', backgroundColor: '#cbd5e1', margin: '0 4px' }} />
+
+              {/* Instant Download Results Buttons */}
+              <button
+                onClick={downloadResultsCSV}
+                title="Download full analysis results table as CSV"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 14px',
+                  borderRadius: '8px',
+                  border: '1px solid #16a34a',
+                  fontSize: '0.8rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  backgroundColor: '#f0fdf4',
+                  color: '#166534',
+                  transition: 'all 0.15s ease',
+                  boxShadow: '0 1px 2px rgba(0,0,0,0.04)'
+                }}
+              >
+                <Download size={14} /> Download CSV
+              </button>
+              <button
+                onClick={downloadResultsFASTA}
+                title="Download verified protein / translated sequences as FASTA"
+                style={{
+                  display: 'inline-flex',
+                  alignItems: 'center',
+                  gap: '6px',
+                  padding: '6px 14px',
+                  borderRadius: '8px',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '0.8rem',
+                  fontWeight: 600,
+                  cursor: 'pointer',
+                  backgroundColor: '#ffffff',
+                  color: '#334155',
+                  transition: 'all 0.15s ease'
+                }}
+              >
+                <FileText size={14} /> Download FASTA
+              </button>
             </div>
           </div>
 
@@ -1046,7 +1156,7 @@ GCGAGCATAACCATCCAAAGCCAAAGAGAGCTAGACGAGCTAAGTAA`
                     </span>
                     {item.was_translated && (
                       <span style={{ fontSize: '0.72rem', backgroundColor: '#e0f2fe', color: '#0369a1', padding: '2px 8px', borderRadius: '12px', fontWeight: 600 }}>
-                        🧬 Translated from Genome DNA
+                        🧬 Translated from Plant mRNA / Transcript
                       </span>
                     )}
                   </div>
@@ -1207,7 +1317,7 @@ GCGAGCATAACCATCCAAAGCCAAAGAGAGCTAGACGAGCTAAGTAA`
                 </h3>
                 <p style={{ margin: 0, fontSize: '0.85rem', color: '#64748b' }}>
                   Length: {selectedResult.sequence?.length || 0} amino acids{' '}
-                  {selectedResult.was_translated && '• Converted from genome nucleotide reading frame'}
+                  {selectedResult.was_translated && '• Translated from mature plant mRNA / transcript (spliced coding frame)'}
                 </p>
               </div>
               <button
@@ -1381,24 +1491,51 @@ GCGAGCATAACCATCCAAAGCCAAAGAGAGCTAGACGAGCTAAGTAA`
                 <span style={{ fontSize: '0.78rem', fontWeight: 700, color: '#475569', textTransform: 'uppercase' }}>
                   Protein Sequence (FASTA)
                 </span>
-                <button
-                  onClick={() => copySequence(selectedResult.sequence)}
-                  style={{
-                    display: 'flex',
-                    alignItems: 'center',
-                    gap: '4px',
-                    fontSize: '0.75rem',
-                    color: '#0f4c81',
-                    backgroundColor: '#f1f5f9',
-                    border: '1px solid #cbd5e1',
-                    borderRadius: '6px',
-                    padding: '4px 10px',
-                    cursor: 'pointer'
-                  }}
-                >
-                  {copied ? <Check size={13} color="#166534" /> : <Copy size={13} />}
-                  {copied ? 'Copied' : 'Copy'}
-                </button>
+                <div style={{ display: 'flex', gap: '8px' }}>
+                  <button
+                    onClick={() => {
+                      const fasta = `>${selectedResult.sequence_id} | TF=${selectedResult.is_tf ? 'YES' : 'NO'} | Family=${selectedResult.family}\n${selectedResult.sequence}`;
+                      const blob = new Blob([fasta], { type: 'text/plain;charset=utf-8;' });
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement('a');
+                      a.href = url;
+                      a.download = `${selectedResult.sequence_id}.fasta`;
+                      a.click();
+                    }}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '0.75rem',
+                      color: '#0f4c81',
+                      backgroundColor: '#f0f9ff',
+                      border: '1px solid #bae6fd',
+                      borderRadius: '6px',
+                      padding: '4px 10px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    <Download size={13} /> Download .fasta
+                  </button>
+                  <button
+                    onClick={() => copySequence(selectedResult.sequence)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '4px',
+                      fontSize: '0.75rem',
+                      color: '#0f4c81',
+                      backgroundColor: '#f1f5f9',
+                      border: '1px solid #cbd5e1',
+                      borderRadius: '6px',
+                      padding: '4px 10px',
+                      cursor: 'pointer'
+                    }}
+                  >
+                    {copied ? <Check size={13} color="#166534" /> : <Copy size={13} />}
+                    {copied ? 'Copied' : 'Copy'}
+                  </button>
+                </div>
               </div>
 
               <div
