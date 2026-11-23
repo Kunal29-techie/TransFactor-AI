@@ -280,7 +280,6 @@ def get_family_database_info(family_name: str):
 
     pfam_url = f"https://www.ebi.ac.uk/interpro/entry/pfam/{pfam_id}/" if pfam_id else None
     interpro_url = f"https://www.ebi.ac.uk/interpro/entry/InterPro/{interpro_id}/" if interpro_id else None
-    planttfdb_url = f"http://planttfdb.gao-lab.org/family.php?fam={clean_fam}"
     cdd_url = f"https://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid={pfam_id}" if pfam_id else None
 
     return {
@@ -290,7 +289,6 @@ def get_family_database_info(family_name: str):
         'pfam_url': pfam_url or f"https://www.ebi.ac.uk/interpro/search/text/{clean_fam}/",
         'interpro_id': interpro_id or 'Available via EBI',
         'interpro_url': interpro_url or f"https://www.ebi.ac.uk/interpro/search/text/{clean_fam}/",
-        'planttfdb_url': planttfdb_url,
         'cdd_url': cdd_url or f"https://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid={clean_fam}",
         'description': data.get('description') if data else f'Plant transcription factor family: {clean_fam}.'
     }

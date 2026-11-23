@@ -10,7 +10,7 @@ const POPULAR_FAMILIES = [
   'WRKY', 'MYB', 'bHLH', 'NAC', 'AP2/ERF', 'bZIP', 'MADS', 'C2H2', 'GATA', 'HD-ZIP'
 ];
 
-// Comprehensive Plant Transcription Factor Database (Pfam, InterPro & PlantTFDB)
+// Comprehensive Plant Transcription Factor Database (Pfam, InterPro & NCBI CDD)
 const PFAM_DATABASE = {
   'WRKY': { pfam: 'PF03106', interpro: 'IPR003657', desc: 'WRKY DNA-binding domain (WRKYGQK zinc-finger motif)' },
   'MYB': { pfam: 'PF00249', interpro: 'IPR001005', desc: 'MYB DNA-binding domain (Helix-turn-helix)' },
@@ -71,7 +71,6 @@ const getDbLinks = (family) => {
     interpro_url: interproId
       ? `https://www.ebi.ac.uk/interpro/entry/InterPro/${interproId}/`
       : `https://www.ebi.ac.uk/interpro/search/text/${famClean}/`,
-    planttfdb_url: `http://planttfdb.gao-lab.org/family.php?fam=${famClean}`,
     cdd_url: pfamId
       ? `https://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid=${pfamId}`
       : `https://www.ncbi.nlm.nih.gov/Structure/cdd/cddsrv.cgi?uid=${famClean}`,
@@ -949,26 +948,28 @@ GCGAGCATAACCATCCAAAGCCAAAGAGAGCTAGACGAGCTAAGTAA`
                             Pfam: {db.pfam_id} <ExternalLink size={10} />
                           </a>
                         )}
-                        <a
-                          href={db.planttfdb_url}
-                          target="_blank"
-                          rel="noreferrer"
-                          style={{
-                            display: 'inline-flex',
-                            alignItems: 'center',
-                            gap: '4px',
-                            padding: '3px 8px',
-                            borderRadius: '6px',
-                            fontSize: '0.72rem',
-                            fontWeight: 700,
-                            backgroundColor: '#eff6ff',
-                            color: '#1d4ed8',
-                            border: '1px solid #bfdbfe',
-                            textDecoration: 'none'
-                          }}
-                        >
-                          PlantTFDB ↗
-                        </a>
+                        {db.interpro_id && (
+                          <a
+                            href={db.interpro_url}
+                            target="_blank"
+                            rel="noreferrer"
+                            style={{
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px',
+                              padding: '3px 8px',
+                              borderRadius: '6px',
+                              fontSize: '0.72rem',
+                              fontWeight: 700,
+                              backgroundColor: '#f5f3ff',
+                              color: '#6d28d9',
+                              border: '1px solid #ddd6fe',
+                              textDecoration: 'none'
+                            }}
+                          >
+                            InterPro: {db.interpro_id} <ExternalLink size={10} />
+                          </a>
+                        )}
                       </div>
                     );
                   })()}
@@ -1226,27 +1227,29 @@ GCGAGCATAACCATCCAAAGCCAAAGAGAGCTAGACGAGCTAAGTAA`
                               Pfam: {db.pfam_id} <ExternalLink size={10} />
                             </a>
                           )}
-                          <a
-                            href={db.planttfdb_url}
-                            target="_blank"
-                            rel="noreferrer"
-                            title="Plant Transcription Factor Database (Peking Univ.)"
-                            style={{
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '3px',
-                              padding: '3px 8px',
-                              borderRadius: '6px',
-                              fontSize: '0.74rem',
-                              fontWeight: 700,
-                              backgroundColor: '#eff6ff',
-                              color: '#1d4ed8',
-                              border: '1px solid #bfdbfe',
-                              textDecoration: 'none'
-                            }}
-                          >
-                            PlantTFDB ↗
-                          </a>
+                          {db.interpro_id && (
+                            <a
+                              href={db.interpro_url}
+                              target="_blank"
+                              rel="noreferrer"
+                              title="InterPro Protein Families Database (EMBL-EBI)"
+                              style={{
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '3px',
+                                padding: '3px 8px',
+                                borderRadius: '6px',
+                                fontSize: '0.74rem',
+                                fontWeight: 700,
+                                backgroundColor: '#f5f3ff',
+                                color: '#6d28d9',
+                                border: '1px solid #ddd6fe',
+                                textDecoration: 'none'
+                              }}
+                            >
+                              InterPro: {db.interpro_id} <ExternalLink size={10} />
+                            </a>
+                          )}
                         </div>
                       );
                     })()}
@@ -1368,7 +1371,7 @@ GCGAGCATAACCATCCAAAGCCAAAGAGAGCTAGACGAGCTAAGTAA`
                     Direct links to international curated repositories for structural domains, sequence alignments, and plant gene regulatory models:
                   </p>
 
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '10px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '10px' }}>
                     {/* Pfam Database */}
                     <a
                       href={db.pfam_url}
@@ -1395,34 +1398,6 @@ GCGAGCATAACCATCCAAAGCCAAAGAGAGCTAGACGAGCTAAGTAA`
                         Pfam ID: {db.pfam_id}
                       </span>
                       <span style={{ fontSize: '0.72rem', color: '#64748b' }}>HMM Domain Profile &amp; Seed Alignments ↗</span>
-                    </a>
-
-                    {/* PlantTFDB */}
-                    <a
-                      href={db.planttfdb_url}
-                      target="_blank"
-                      rel="noreferrer"
-                      style={{
-                        backgroundColor: '#fff',
-                        border: '1.5px solid #bfdbfe',
-                        borderRadius: '10px',
-                        padding: '10px 14px',
-                        textDecoration: 'none',
-                        color: 'inherit',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '3px',
-                        boxShadow: '0 1px 3px rgba(0,0,0,0.03)'
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '0.82rem', fontWeight: 800, color: '#1d4ed8' }}>PlantTFDB 5.0</span>
-                        <ExternalLink size={13} color="#1d4ed8" />
-                      </div>
-                      <span style={{ fontSize: '0.8rem', fontWeight: 800, color: '#0f172a' }}>
-                        Family: {selectedResult.family}
-                      </span>
-                      <span style={{ fontSize: '0.72rem', color: '#64748b' }}>Curated Plant TFDB Catalog ↗</span>
                     </a>
 
                     {/* InterPro */}
